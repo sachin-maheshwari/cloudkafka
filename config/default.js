@@ -1,3 +1,5 @@
 module.exports = {
-    CLOUDKARAFKA_TOPIC: "topic"
+    CLOUDKARAFKA_TOPICS: ["topic1"],
+    DEBUG : 'generic' // can use "generic,broker,security"
+
 }

@@ -1,40 +1,45 @@
+process.env.NODE_ENV = process.env.NODE_ENV || 'dev';
+
 const Kafka = require("node-rdkafka");
 const Config = require('config')
 
 const kafkaConf = {
-  "group.id": "cloudkarafka-sachin",
+  "group.id": "cloudkarafka-group-id",
   "metadata.broker.list": Config.CLOUDKARAFKA_BROKERS.split(","),
   "socket.keepalive.enable": true,
   "security.protocol": "SASL_SSL",
   "sasl.mechanisms": "SCRAM-SHA-256",
   "sasl.username": Config.CLOUDKARAFKA_USERNAME,
   "sasl.password": Config.CLOUDKARAFKA_PASSWORD,
-  "debug": "generic,broker,security"
+  "debug": Config.DEBUG
 };
 
-const topic = Config.CLOUDKARAFKA_TOPIC;
+const topics = Config.CLOUDKARAFKA_TOPICS;
 const producer = new Kafka.Producer(kafkaConf);
-const maxMessages = 20;
+const maxMessages = 5;
 
-const genMessage = i => new Buffer(`Kafka example, message number ${i}`);
+const genMessage = i => new Buffer(`message number ${i}`);
 
-producer.on("ready", function(arg) {
+producer.on("ready", function (arg) {
   console.log(`producer ${arg.name} ready.`);
   for (var i = 0; i < maxMessages; i++) {
-    producer.produce(topic, -1, genMessage(i), i);
+    topics.forEach(function (topic) {
+      producer.produce(topic, -1, genMessage(i), i);
+    });
   }
-  setTimeout(() => producer.disconnect(), 30);
+  setTimeout(() => producer.disconnect(), 300);
 });
 
-producer.on("disconnected", function(arg) {
+producer.on("disconnected", function (arg) {
+  console.log('disconnecting...');
   process.exit();
 });
 
-producer.on('event.error', function(err) {
+producer.on('event.error', function (err) {
   console.error(err);
   process.exit(1);
 });
-producer.on('event.log', function(log) {
+producer.on('event.log', function (log) {
   console.log(log);
 });
 producer.connect();

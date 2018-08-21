@@ -1,5 +1,7 @@
-var Kafka = require("node-rdkafka");
-var Config = require("config");
+process.env.NODE_ENV = process.env.NODE_ENV || 'dev';
+
+const Kafka = require("node-rdkafka");
+const Config = require("config");
 
 var kafkaConf = {
   "group.id": "cloudkarafka-sachin-1",
@@ -10,7 +12,7 @@ var kafkaConf = {
   "sasl.mechanisms": "SCRAM-SHA-256",
   "sasl.username": Config.CLOUDKARAFKA_USERNAME,
   "sasl.password": Config.CLOUDKARAFKA_PASSWORD,
-  "debug": "generic,broker,security"
+  "debug": Config.DEBUG
 };
 
 const topics = Config.CLOUDKARAFKA_TOPICS ? Config.CLOUDKARAFKA_TOPICS : [Config.CLOUDKARAFKA_TOPIC];
@@ -18,6 +20,7 @@ const consumer = new Kafka.KafkaConsumer(kafkaConf, {
   //"auto.offset.reset": "beginning",
   'enable.auto.commit': true
 });
+
 const numMessages = 5;
 var counter = 0;
 consumer.on("error", function (err) {
@@ -28,15 +31,9 @@ consumer.on("ready", function (arg) {
   console.log("topic", topics)
   consumer.subscribe(topics);
   consumer.consume();
-  console.log("consume", consumer)
 });
 consumer.on("data", function (m) {
-  counter++;
-  if (counter % numMessages === 0) {
-    console.log("calling commit");
-    consumer.commit(m);
-  }
-  console.log(m.value.toString());
+  console.log(`Topic : ${m.topic} - Message :  ${m.value.toString()} `);
 });
 consumer.on("disconnected", function (arg) {
   process.exit();
